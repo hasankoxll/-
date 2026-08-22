@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>Vaultify | ربط واتساب الأعمال</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(180deg,#0d2422 0%,#07151b 46%,#061117 100%);color:#f4f8f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}.wrap{max-width:720px;margin:auto;padding:48px 20px 72px}.brand{font-size:28px;font-weight:800;color:#83dfb7}.badge{display:inline-block;margin-top:14px;padding:8px 12px;border:1px solid #31505a;border-radius:999px;color:#b7c6ca;font-size:14px}h1{font-size:46px;line-height:1.12;margin:28px 0 14px}.lead{color:#a9b8bc;font-size:18px;line-height:1.9}.card{margin-top:34px;padding:26px;border:1px solid #29424b;border-radius:28px;background:rgba(14,34,41,.9);box-shadow:0 24px 70px rgba(0,0,0,.25)}button{width:100%;border:0;border-radius:18px;padding:19px;background:linear-gradient(90deg,#43c89d,#77d8b0);color:#061619;font-weight:800;font-size:20px;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:18px;padding:16px 18px;border:1px solid #2b454e;border-radius:16px;background:#10252d;color:#c8d4d7;line-height:1.7}.status.ok{border-color:#2d9b73;background:#0d2a22;color:#bbf0d6}.status.err{border-color:#9b4049;background:#291a1f;color:#ffd1d5}.steps{margin-top:24px;color:#a7b7bb;line-height:2.1}.tiny{margin-top:18px;color:#7f9298;font-size:13px;line-height:1.7}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">Vaultify | فولتڤاي</div>
+    <div class="badge">Meta Embedded Signup الرسمي</div>
+    <h1>ربط واتساب الأعمال</h1>
+    <p class="lead">اربط حساب WhatsApp Business مع Vaultify عبر نافذة Meta الرسمية. لا يتم طلب كلمة مرور واتساب أو تخزينها.</p>
+    <section class="card">
+      <button id="connect" disabled>جارٍ تجهيز Meta…</button>
+      <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
+      <div class="steps">1. اضغط «ربط WhatsApp Business».<br>2. أكمل الموافقة داخل Meta.<br>3. يكمل Vaultify الإعداد على الخادم تلقائيًا.</div>
+      <div class="tiny">لا يحتوي هذا الموقع على App Secret أو Access Token. جميع الأسرار تبقى على الخادم.</div>
+    </section>
+  </main>
+<script>
+'use strict';
+const APP_ID='1386161749516311';
+const CONFIG_ID='1634632131604770';
+const BACKEND='https://ittixiicaeizihyzawju.supabase.co/functions/v1/meta-embedded-signup';
+const btn=document.getElementById('connect');
+const statusEl=document.getElementById('status');
+function setStatus(text,type=''){statusEl.textContent=text;statusEl.className='status'+(type?' '+type:'');}
+window.fbAsyncInit=function(){
+  try{
+    FB.init({appId:APP_ID,cookie:true,xfbml:false,version:'v25.0'});
+    btn.disabled=false;
+    btn.textContent='ربط WhatsApp Business';
+    setStatus('جاهز للربط.');
+  }catch(e){setStatus('تعذر تهيئة Meta SDK.','err');}
+};
+(function(d,s,id){
+  if(d.getElementById(id))return;
+  const js=d.createElement(s);js.id=id;js.async=true;js.defer=true;js.crossOrigin='anonymous';
+  js.src='https://connect.facebook.net/en_US/sdk.js';
+  js.onerror=()=>setStatus('تعذر تحميل Meta SDK. أعد تحميل الصفحة.','err');
+  d.head.appendChild(js);
+})(document,'script','facebook-jssdk');
+btn.addEventListener('click',()=>{
+  if(typeof FB==='undefined'){setStatus('Meta SDK غير جاهز بعد.','err');return;}
+  btn.disabled=true;setStatus('جارٍ فتح نافذة Meta…');
+  FB.login(async(response)=>{
+    const code=response&&response.authResponse&&response.authResponse.code;
+    if(!code){btn.disabled=false;setStatus('لم يصل رمز التفويض من Meta. لم يتم إجراء أي تغيير.','err');return;}
+    setStatus('تمت الموافقة. جارٍ إكمال الربط على الخادم…');
+    try{
+      const r=await fetch(BACKEND,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){btn.disabled=false;setStatus('فشل إكمال الربط: '+(j&&j.meta&&j.meta.message?j.meta.message:(j&&j.error?j.error:'HTTP '+r.status)),'err');return;}
+      btn.textContent='تم الربط';setStatus('تم ربط واتساب الأعمال بنجاح.','ok');
+    }catch(e){btn.disabled=false;setStatus('تعذر الاتصال بخادم Vaultify.','err');}
+  },{config_id:CONFIG_ID,response_type:'code',override_default_response_type:true,extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}});
+});
+</script>
+</body>
+</html>
