@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="dark">
+  <title>Vaultify | ربط WhatsApp Business</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#07151b;color:#f4f8f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}body{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 70% 0,#12362f 0,transparent 35%),linear-gradient(180deg,#0d2422,#07151b 52%,#061117)}main{width:min(92vw,720px);padding:42px 18px 64px}.brand{font-size:28px;font-weight:850;color:#83dfb7}.badge{display:inline-block;margin-top:18px;padding:8px 12px;border:1px solid #31505b;border-radius:999px;color:#b6c7cd;font-size:13px}h1{font-size:clamp(38px,8vw,54px);line-height:1.08;margin:22px 0 14px}.lead{font-size:17px;line-height:1.9;color:#a9b8bc}.card{margin-top:30px;padding:26px;border:1px solid #29424b;border-radius:26px;background:rgba(14,34,41,.94);box-shadow:0 22px 70px rgba(0,0,0,.24)}button{width:100%;min-height:62px;border:0;border-radius:18px;background:linear-gradient(90deg,#43c89d,#77d8b0);color:#061619;font-size:19px;font-weight:850;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:18px;padding:16px 18px;border:1px solid #2b454e;border-radius:16px;background:#10252d;color:#c8d4d7;line-height:1.7}.status.ok{border-color:#2e9b74;background:#0d2b23;color:#baf1d7}.status.err{border-color:#9e414a;background:#2a1b20;color:#ffd0d4}.steps{margin-top:22px;color:#879ba1;font-size:14px;line-height:2}.tiny{margin-top:20px;color:#71868d;font-size:12px;line-height:1.7}
+  </style>
+</head>
+<body>
+<main>
+  <div class="brand">Vaultify | فولتڤاي</div>
+  <div class="badge">Meta Embedded Signup — Production</div>
+  <h1>ربط WhatsApp Business</h1>
+  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. لن يعتبر Vaultify الربط ناجحًا إلا بعد استلام Session Info الحقيقية والتحقق من حالة Coexistence.</p>
+  <section class="card">
+    <button id="connect" disabled>جارٍ تجهيز Meta...</button>
+    <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. أكمل خطوات Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. ينتظر Vaultify Session Info الحقيقية قبل الحفظ.</div>
+    <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
+  </section>
+</main>
+<script>
+'use strict';
+const APP_ID='1461761172428694';
+const CONFIG_ID='1622801019506151';
+const API='https://ittixiicaeizihyzawju.supabase.co/functions/v1/meta-embedded-signup-production';
+const btn=document.getElementById('connect');
+const statusEl=document.getElementById('status');
+const FINISH_EVENTS=new Set(['FINISH','FINISH_ONLY_WABA','FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING','FINISH_GRANT_ONLY_API_ACCESS']);
+let authCode=null;
+let sessionInfo=null;
+let busy=false;
+
+function status(text,type=''){statusEl.textContent=text;statusEl.className='status'+(type?' '+type:'');}
+function trustedMetaOrigin(origin){try{const u=new URL(origin);return u.protocol==='https:'&&(u.hostname==='facebook.com'||u.hostname.endsWith('.facebook.com'));}catch{return false;}}
+
+async function finalize(){
+  if(busy||!authCode||!sessionInfo?.waba_id||!sessionInfo?.phone_number_id)return;
+  busy=true;btn.disabled=true;
+  status('وصلت جلسة Coexistence الحقيقية. جارٍ التحقق والحفظ...');
+  try{
+    const payload={code:authCode,waba_id:String(sessionInfo.waba_id),phone_number_id:String(sessionInfo.phone_number_id),event:String(sessionInfo.event||'')};
+    if(sessionInfo.business_id||sessionInfo.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){busy=false;btn.disabled=false;status('تعذر إكمال الربط: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status)),'err');return;}
+    status('تم التحقق من Coexistence والحفظ بنجاح.','ok');
+    btn.textContent='تم الربط';
+  }catch(e){busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify.','err');}
+}
+
+window.addEventListener('message',event=>{
+  if(!trustedMetaOrigin(event.origin))return;
+  let data=event.data;
+  if(typeof data==='string'){try{data=JSON.parse(data);}catch{return;}}
+  if(!data||data.type!=='WA_EMBEDDED_SIGNUP')return;
+  const ev=String(data.event||'');
+  if(FINISH_EVENTS.has(ev)){
+    const x=data.data&&typeof data.data==='object'?data.data:{};
+    sessionInfo={...x,event:ev};
+    status(authCode?'تم استلام Session Info والتفويض. جارٍ التحقق...':'تم استلام Session Info. جارٍ انتظار التفويض...');
+    finalize();
+  }else if(ev==='ERROR'){
+    btn.disabled=false;status('Meta أبلغت عن خطأ: '+(data.data?.error_message||'غير معروف'),'err');
+  }else if(ev==='CANCEL'){
+    btn.disabled=false;status('تم إلغاء الربط داخل Meta.','err');
+  }
+});
+
+window.fbAsyncInit=function(){
+  try{
+    FB.init({appId:APP_ID,cookie:true,xfbml:false,version:'v25.0'});
+    btn.disabled=false;btn.textContent='ربط WhatsApp Business';status('جاهز للربط.');
+  }catch{status('تعذر تهيئة Meta SDK.','err');}
+};
+(function(d,s,id){
+  if(d.getElementById(id))return;
+  const js=d.createElement(s);js.id=id;js.async=true;js.defer=true;js.crossOrigin='anonymous';
+  js.src='https://connect.facebook.net/en_US/sdk.js';
+  js.onerror=()=>status('تعذر تحميل Meta SDK.','err');
+  d.head.appendChild(js);
+})(document,'script','facebook-jssdk');
+
+btn.addEventListener('click',()=>{
+  if(typeof FB==='undefined'){status('Meta SDK غير جاهز بعد.','err');return;}
+  authCode=null;sessionInfo=null;busy=false;btn.disabled=true;status('جارٍ فتح Meta...');
+  FB.login(response=>{
+    const ar=response?.authResponse||{};
+    authCode=ar.code?String(ar.code):null;
+    if(!authCode){btn.disabled=false;status('لم يصل OAuth code صالح من Meta.','err');return;}
+    status(sessionInfo?'وصل OAuth code وSession Info. جارٍ التحقق...':'وصل OAuth code. ننتظر Session Info الحقيقية من Meta.');
+    finalize();
+  },{
+    config_id:CONFIG_ID,
+    auth_type:'rerequest',
+    response_type:'code',
+    override_default_response_type:true,
+    extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}
+  });
+});
+</script>
+</body>
+</html>
