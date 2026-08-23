@@ -15,11 +15,11 @@
   <div class="brand">Vaultify | فولتڤاي</div>
   <div class="badge">Meta Embedded Signup — Production</div>
   <h1>ربط WhatsApp Business</h1>
-  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. لن يعتبر Vaultify الربط ناجحًا إلا بعد استلام Session Info الحقيقية والتحقق من حالة Coexistence.</p>
+  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. لن يعتبر Vaultify القناة جاهزة للتشغيل إلا بعد استلام Session Info الحقيقية ثم إثبات النقل برسالة واتساب فعلية.</p>
   <section class="card">
     <button id="connect" disabled>جارٍ تجهيز Meta...</button>
     <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
-    <div class="steps">1. اضغط زر الربط.<br>2. أكمل خطوات Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. ينتظر Vaultify Session Info الحقيقية قبل الحفظ.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. أكمل خطوات Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. يحفظ Vaultify التفويض بعد Session Info الحقيقية، ثم يتحقق من النقل بأول رسالة فعلية.</div>
     <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
   </section>
 </main>
@@ -48,8 +48,13 @@ async function finalize(){
     const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){busy=false;btn.disabled=false;status('تعذر إكمال الربط: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status)),'err');return;}
-    status('تم التحقق من Coexistence والحفظ بنجاح.','ok');
-    btn.textContent='تم الربط';
+    if(j?.transport_verified===true){
+      status('تم التحقق من الربط والنقل بنجاح. القناة جاهزة للتشغيل.','ok');
+      btn.textContent='القناة جاهزة';
+    }else{
+      status('تم حفظ التفويض والربط لدى Vaultify. أرسل رسالة واتساب فعلية إلى الرقم لإكمال التحقق من النقل تلقائيًا.','ok');
+      btn.textContent='تم حفظ التفويض';
+    }
   }catch(e){busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify.','err');}
 }
 
