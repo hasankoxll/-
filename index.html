@@ -13,168 +13,71 @@
 <body>
 <main>
   <div class="brand">Vaultify | فولتڤاي</div>
-  <div class="badge">Meta Embedded Signup الرسمي</div>
+  <div class="badge">Meta Embedded Signup — Production</div>
   <h1>ربط WhatsApp Business</h1>
-  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. بيانات التفويض الحساسة تُعالج على الخادم ولا تُخزن في المتصفح.</p>
+  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. لن يعتبر Vaultify الربط ناجحًا إلا بعد استلام Session Info الحقيقية والتحقق من حالة Coexistence.</p>
   <section class="card">
     <button id="connect" disabled>جارٍ تجهيز Meta...</button>
     <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
-    <div class="steps">1. اضغط زر الربط.<br>2. أكمل خطوات Meta حتى النهاية.<br>3. يتحقق Vaultify من WABA ورقم الهاتف ويحفظ الربط آمنًا.</div>
-    <div class="tiny">لا تغلق نافذة Meta قبل ظهور رسالة نجاح الربط هنا.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. أكمل خطوات Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. ينتظر Vaultify Session Info الحقيقية قبل الحفظ.</div>
+    <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
   </section>
 </main>
 <script>
 'use strict';
-const APP_ID='1386161749516311';
-const CONFIG_ID='1634632131604770';
-const API='https://ittixiicaeizihyzawju.supabase.co/functions/v1/meta-embedded-signup';
+const APP_ID='1461761172428694';
+const CONFIG_ID='1622801019506151';
+const API='https://ittixiicaeizihyzawju.supabase.co/functions/v1/meta-embedded-signup-production';
 const btn=document.getElementById('connect');
 const statusEl=document.getElementById('status');
 const FINISH_EVENTS=new Set(['FINISH','FINISH_ONLY_WABA','FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING','FINISH_GRANT_ONLY_API_ACCESS']);
 let authCode=null;
-let accessToken=null;
-let oauthRedirectUri=null;
 let sessionInfo=null;
-let finishing=false;
-let finalizeTimer=null;
-
+let busy=false;
 function status(text,type=''){statusEl.textContent=text;statusEl.className='status'+(type?' '+type:'');}
 function trustedMetaOrigin(origin){try{const u=new URL(origin);return u.protocol==='https:'&&(u.hostname==='facebook.com'||u.hostname.endsWith('.facebook.com'));}catch{return false;}}
-function captureOAuthRedirect(raw){
-  if(!raw||typeof raw!=='string')return;
-  try{
-    const u=new URL(raw,location.href);
-    if(!(u.hostname==='facebook.com'||u.hostname.endsWith('.facebook.com')))return;
-    const rd=u.searchParams.get('redirect_uri');
-    if(!rd)return;
-    const target=new URL(rd);
-    if(target.protocol==='https:')oauthRedirectUri=target.toString();
-  }catch{}
-}
-
-const nativeOpen=window.open;
-window.open=function(...args){
-  if(typeof args[0]==='string')captureOAuthRedirect(args[0]);
-  return nativeOpen.apply(window,args);
-};
-
-const iframeObserver=new MutationObserver(mutations=>{
-  for(const m of mutations){
-    if(m.type==='attributes'&&m.target instanceof HTMLIFrameElement)captureOAuthRedirect(m.target.src);
-    for(const node of m.addedNodes){
-      if(node instanceof HTMLIFrameElement)captureOAuthRedirect(node.src);
-      if(node instanceof Element)node.querySelectorAll('iframe[src]').forEach(el=>captureOAuthRedirect(el.src));
-    }
-  }
-});
-iframeObserver.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
-
-function scheduleFinalize(){
-  if(finishing||(!accessToken&&!authCode))return;
-  clearTimeout(finalizeTimer);
-  if(accessToken||sessionInfo?.waba_id){finalize();return;}
-  status('تم استلام التفويض. جارٍ مزامنة بيانات Meta...');
-  finalizeTimer=setTimeout(finalize,2000);
-}
-
 async function finalize(){
-  if(finishing||(!accessToken&&!authCode))return;
-  finishing=true;
-  clearTimeout(finalizeTimer);
-  btn.disabled=true;
-  status('تمت موافقة Meta. جارٍ التحقق والحفظ الآمن...');
-  const payload={};
-  if(accessToken){
-    payload.access_token=accessToken;
-  }else{
-    payload.code=authCode;
-    if(oauthRedirectUri)payload.redirect_uri=oauthRedirectUri;
-  }
-  if(sessionInfo?.waba_id)payload.waba_id=String(sessionInfo.waba_id);
-  if(sessionInfo?.phone_number_id)payload.phone_number_id=String(sessionInfo.phone_number_id);
-  if(sessionInfo?.business_id||sessionInfo?.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
-  if(sessionInfo?.event)payload.event=String(sessionInfo.event);
+  if(busy||!authCode||!sessionInfo?.waba_id||!sessionInfo?.phone_number_id)return;
+  busy=true;btn.disabled=true;status('وصلت جلسة Coexistence الحقيقية. جارٍ التحقق والحفظ...');
   try{
+    const payload={code:authCode,waba_id:String(sessionInfo.waba_id),phone_number_id:String(sessionInfo.phone_number_id),event:String(sessionInfo.event||'')};
+    if(sessionInfo.business_id||sessionInfo.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
     const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok){
-      finishing=false;
-      btn.disabled=false;
-      if(j?.error==='no_waba_grant')status('تم التفويض لكن Meta لم تُرجع WABA لهذا الربط. لا تُعد المحاولة؛ أرسل هذه الشاشة.','err');
-      else if(j?.error==='code_exchange_failed')status('وصل التفويض لكن تعذر تبديل رمز Meta. لا تُعد المحاولة؛ أرسل هذه الشاشة.','err');
-      else status('تعذر إكمال الربط: '+(j?.meta?.message||j?.error||('HTTP '+r.status)),'err');
-      return;
-    }
-    status('تم ربط WhatsApp Business والتحقق من الحفظ بنجاح.','ok');
-    btn.textContent='تم الربط';
-    btn.disabled=true;
-    authCode=null;accessToken=null;
-  }catch{
-    finishing=false;
-    btn.disabled=false;
-    status('تعذر الاتصال بخادم Vaultify.','err');
-  }
+    if(!r.ok){busy=false;btn.disabled=false;status('تعذر إكمال الربط: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status)),'err');return;}
+    status('تم التحقق من Coexistence والحفظ بنجاح.','ok');btn.textContent='تم الربط';
+  }catch{busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify.','err');}
 }
-
 window.addEventListener('message',event=>{
   if(!trustedMetaOrigin(event.origin))return;
-  let data=event.data;
-  if(typeof data==='string'){try{data=JSON.parse(data);}catch{return;}}
+  let data=event.data;if(typeof data==='string'){try{data=JSON.parse(data);}catch{return;}}
   if(!data||data.type!=='WA_EMBEDDED_SIGNUP')return;
   const ev=String(data.event||'');
   if(FINISH_EVENTS.has(ev)){
     const x=data.data&&typeof data.data==='object'?data.data:{};
     sessionInfo={...x,event:ev};
-    status((accessToken||authCode)?'تم استلام بيانات الجلسة والتفويض. جارٍ الحفظ...':'تم استلام بيانات الجلسة. جارٍ إكمال التفويض...');
-    scheduleFinalize();
+    status(authCode?'تم استلام Session Info والتفويض. جارٍ التحقق...':'تم استلام Session Info. جارٍ انتظار التفويض...');
+    finalize();
   }else if(ev==='ERROR'){
-    btn.disabled=false;
-    status('Meta أبلغت عن خطأ: '+(data.data?.error_message||'غير معروف'),'err');
+    btn.disabled=false;status('Meta أبلغت عن خطأ: '+(data.data?.error_message||'غير معروف'),'err');
   }else if(ev==='CANCEL'){
-    btn.disabled=false;
-    status('تم إلغاء الربط داخل Meta.','err');
+    btn.disabled=false;status('تم إلغاء الربط داخل Meta.','err');
   }
 });
-
 window.fbAsyncInit=function(){
-  try{
-    FB.init({appId:APP_ID,cookie:true,xfbml:false,version:'v25.0'});
-    btn.disabled=false;
-    btn.textContent='ربط WhatsApp Business';
-    status('جاهز للربط.');
-  }catch{status('تعذر تهيئة Meta SDK.','err');}
+  try{FB.init({appId:APP_ID,cookie:true,xfbml:false,version:'v25.0'});btn.disabled=false;btn.textContent='ربط WhatsApp Business';status('جاهز للربط.');}
+  catch{status('تعذر تهيئة Meta SDK.','err');}
 };
-(function(d,s,id){
-  if(d.getElementById(id))return;
-  const js=d.createElement(s);
-  js.id=id;js.async=true;js.defer=true;js.crossOrigin='anonymous';
-  js.src='https://connect.facebook.net/en_US/sdk.js';
-  js.onerror=()=>status('تعذر تحميل Meta SDK. أعد فتح الصفحة في Safari.','err');
-  d.head.appendChild(js);
-})(document,'script','facebook-jssdk');
-
+(function(d,s,id){if(d.getElementById(id))return;const js=d.createElement(s);js.id=id;js.async=true;js.defer=true;js.crossOrigin='anonymous';js.src='https://connect.facebook.net/en_US/sdk.js';js.onerror=()=>status('تعذر تحميل Meta SDK.','err');d.head.appendChild(js);})(document,'script','facebook-jssdk');
 btn.addEventListener('click',()=>{
   if(typeof FB==='undefined'){status('Meta SDK غير جاهز بعد.','err');return;}
-  authCode=null;accessToken=null;oauthRedirectUri=null;sessionInfo=null;finishing=false;
-  clearTimeout(finalizeTimer);
-  btn.disabled=true;
-  status('جارٍ فتح Meta...');
+  authCode=null;sessionInfo=null;busy=false;btn.disabled=true;status('جارٍ فتح Meta...');
   FB.login(response=>{
-    const ar=response?.authResponse||{};
-    if(ar.accessToken)accessToken=String(ar.accessToken);
-    if(ar.code)authCode=String(ar.code);
-    if(!accessToken&&!authCode){
-      btn.disabled=false;
-      status('لم يصل تفويض صالح من Meta.','err');
-      return;
-    }
-    scheduleFinalize();
-  },{
-    config_id:CONFIG_ID,
-    response_type:'code',
-    override_default_response_type:true,
-    extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}
-  });
+    const ar=response?.authResponse||{};authCode=ar.code?String(ar.code):null;
+    if(!authCode){btn.disabled=false;status('لم يصل OAuth code صالح من Meta.','err');return;}
+    status(sessionInfo?'وصل OAuth code وSession Info. جارٍ التحقق...':'وصل OAuth code. ننتظر Session Info الحقيقية من Meta.');
+    finalize();
+  },{config_id:CONFIG_ID,auth_type:'rerequest',response_type:'code',override_default_response_type:true,extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}});
 });
 </script>
 </body>
