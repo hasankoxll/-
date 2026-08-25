@@ -1,46 +1,10 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark">
-<title>Vaultify Revenue OS</title>
-<link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-<div id="loginGate" class="login-gate">
-  <div class="login-card">
-    <div class="brand login-brand"><span class="mark">V</span><div><b>Vaultify</b><small>Revenue OS</small></div></div>
-    <h1>دخول لوحة الإيرادات</h1>
-    <p class="sub">البيانات محمية بحساب Vaultify وعضوية النشاط. لا تُعرض بيانات العملاء بدون صلاحية.</p>
-    <form id="loginForm">
-      <label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="email" required placeholder="name@business.com">
-      <label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required placeholder="••••••••">
-      <button class="cta" type="submit">تسجيل الدخول</button>
-    </form>
-    <div id="loginError" class="login-error"></div>
-  </div>
-</div>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark"><title>Vaultify Revenue OS</title><link rel="stylesheet" href="./styles.css"></head><body>
+<div id="loading" class="boot">جارٍ فتح Vaultify Revenue OS…</div>
 <div id="appRoot" class="app hidden">
-  <aside class="sidebar">
-    <div class="brand"><span class="mark">V</span><div><b>Vaultify</b><small>Revenue OS</small></div></div>
-    <nav id="nav">
-      <button class="active" data-view="overview">نظرة عامة</button>
-      <button data-view="trial">التجربة</button>
-      <button data-view="billing">الاشتراك والفوترة</button>
-      <button data-view="integrations">التكاملات</button>
-    </nav>
-    <div class="side-foot">Vaultify | فولتڤاي<br><span id="tenantName">Enterprise AI & Revenue Systems</span></div>
-  </aside>
-  <main>
-    <header><div><small>مساحة العميل</small><h1 id="pageTitle">مركز الإيرادات</h1></div><div class="header-actions"><span id="entitlementPill" class="pill">جارٍ التحميل</span><button id="logout" class="logout">خروج</button><span class="avatar">V</span></div></header>
-    <div id="globalError"></div>
-    <section id="overview" class="view active"></section>
-    <section id="trial" class="view"></section>
-    <section id="billing" class="view"></section>
-    <section id="integrations" class="view"></section>
-  </main>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script type="module" src="./app.js"></script>
-</body>
-</html>
+<aside class="sidebar"><div class="brand"><span class="mark">V</span><div><b>Vaultify</b><small>Revenue OS</small></div></div><nav id="nav">
+<button class="active" data-view="overview">مركز الإيرادات</button><button data-view="crm">CRM</button><button data-view="conversations">المحادثات</button><button data-view="roi">ROI</button><button data-view="trial">التجربة</button><button data-view="billing">الاشتراك والفوترة</button><button data-view="automation">الأتمتة والتكاملات</button>
+</nav><div class="side-foot"><b id="tenantName">Vaultify</b><br><span id="role">—</span></div></aside>
+<main><header><div><small>مساحة العميل</small><h1 id="pageTitle">مركز الإيرادات</h1></div><div class="header-actions"><span id="entitlementPill" class="pill">جارٍ التحميل</span><button id="logout" class="logout">خروج</button><span id="avatar" class="avatar">V</span></div></header><div id="globalError"></div>
+<section id="overview" class="view active"></section><section id="crm" class="view"></section><section id="conversations" class="view"></section><section id="roi" class="view"></section><section id="trial" class="view"></section><section id="billing" class="view"></section><section id="automation" class="view"></section>
+</main></div><script type="module" src="./app.js"></script></body></html>
