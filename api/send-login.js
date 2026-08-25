@@ -1,14 +1,12 @@
 export default async function handler(req, res) {
-  if (req.method !== 'GET' && req.method !== 'POST') {
-    res.setHeader('Allow', 'GET, POST');
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).send('Method Not Allowed');
   }
 
-  const source = req.method === 'GET' ? req.query : req.body;
-  const email = String(source?.email || '').trim().toLowerCase();
-
+  const email = String(req.body?.email || '').trim().toLowerCase();
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-    return res.redirect(302, '/login-v2.html?error=invalid_email');
+    return res.redirect(303, '/login-v2.html?error=invalid_email');
   }
 
   const SUPABASE_URL = 'https://ittixiicaeizihyzawju.supabase.co';
@@ -23,18 +21,18 @@ export default async function handler(req, res) {
         'apikey': PUBLISHABLE_KEY,
         'Authorization': `Bearer ${PUBLISHABLE_KEY}`
       },
-      body: JSON.stringify({ email, create_user: true })
+      body: JSON.stringify({ email, create_user: false })
     });
 
     const text = await r.text();
     if (!r.ok) {
       console.error('Supabase OTP error', r.status, text);
-      return res.redirect(302, `/login-v2.html?error=send_failed&status=${r.status}`);
+      return res.redirect(303, `/login-v2.html?error=send_failed&status=${r.status}`);
     }
 
-    return res.redirect(302, '/login-v2.html?sent=1');
+    return res.redirect(303, '/login-v2.html?sent=1');
   } catch (e) {
     console.error('Magic link send exception', e);
-    return res.redirect(302, '/login-v2.html?error=network');
+    return res.redirect(303, '/login-v2.html?error=network');
   }
 }
