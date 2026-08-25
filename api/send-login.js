@@ -4,8 +4,12 @@ export default async function handler(req, res) {
     return res.status(405).send('Method Not Allowed');
   }
 
-  const email = String((req.method === 'GET' ? req.query?.email : req.body?.email) || '').trim().toLowerCase();
+  const source = req.method === 'GET' ? req.query : req.body;
+  const email = String(source?.email || '').trim().toLowerCase();
+  const debug = String(source?.debug || '') === '1';
+
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (debug) return res.status(400).json({ ok:false, stage:'validate_email', code:'invalid_email' });
     return res.redirect(302, '/login-v2.html?error=invalid_email');
   }
 
@@ -24,14 +28,21 @@ export default async function handler(req, res) {
       body: JSON.stringify({ email, create_user: true })
     });
 
+    const text = await r.text();
+    if (debug) {
+      let parsed = null;
+      try { parsed = text ? JSON.parse(text) : null; } catch {}
+      return res.status(r.ok ? 200 : r.status).json({ ok:r.ok, status:r.status, body:parsed ?? text });
+    }
+
     if (!r.ok) {
-      const text = await r.text();
       console.error('Supabase OTP error', r.status, text);
       return res.redirect(302, `/login-v2.html?error=send_failed&status=${r.status}`);
     }
 
     return res.redirect(302, '/login-v2.html?sent=1');
   } catch (e) {
+    if (debug) return res.status(500).json({ ok:false, stage:'fetch', error:String(e?.message || e) });
     console.error('Magic link send exception', e);
     return res.redirect(302, '/login-v2.html?error=network');
   }
