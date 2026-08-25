@@ -19,7 +19,7 @@
   <section class="card">
     <button id="connect" disabled>جارٍ تجهيز Meta...</button>
     <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
-    <div class="steps">1. اضغط زر الربط.<br>2. اختر حساب Vaultify الحقيقي فقط وأكمل Meta حتى النهاية.<br>3. إذا طلب Meta إكمال ربط تطبيق واتساب الأعمال، افتح WhatsApp Business → الإعدادات → الحساب → Business Platform واتبع خطوة الربط/QR.<br>4. لا ترسل اختبارًا قبل أن تعرض الصفحة أن حالة النقل أصبحت متصلة.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. اختر حساب Vaultify الحقيقي فقط وأكمل Meta حتى النهاية.<br>3. إذا كان WhatsApp Business على الجوال يطلب QR، اترك ماسح QR مفتوحًا واضغط من هذه الصفحة «إظهار QR / إكمال Business Platform» لفتح جلسة Meta على الماك.<br>4. امسح QR الذي تعرضه Meta من تطبيق WhatsApp Business، ولا تختبر الرسائل قبل أن تصبح حالة النقل CONNECTED.</div>
     <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
   </section>
 </main>
@@ -38,6 +38,7 @@ let fallbackTimer=null;
 function status(text,type=''){statusEl.textContent=text;statusEl.className='status'+(type?' '+type:'');}
 function trustedMetaOrigin(origin){try{const u=new URL(origin);return u.protocol==='https:'&&(u.hostname==='facebook.com'||u.hostname.endsWith('.facebook.com'));}catch{return false;}}
 function normalizedSession(raw,ev){const x=raw&&typeof raw==='object'?raw:{};const waba=x.waba_id||x.wabaId||x.whatsapp_business_account_id||x.business_account_id||null;const phone=x.phone_number_id||x.phoneNumberId||null;return {...x,waba_id:waba?String(waba):null,phone_number_id:phone?String(phone):null,event:ev};}
+function enablePairingRetry(){busy=false;btn.disabled=false;btn.textContent='إظهار QR / إكمال Business Platform';}
 async function finalize(forceOAuthFallback=false){
   if(busy||!authCode)return;
   if(!forceOAuthFallback&&!sessionInfo?.waba_id)return;
@@ -57,11 +58,11 @@ async function finalize(forceOAuthFallback=false){
       status('تم التحقق من الربط والنقل بنجاح. القناة جاهزة للتشغيل.','ok');
       btn.textContent='القناة جاهزة';
     }else if(j?.is_on_biz_app===true){
-      status('تم حفظ التفويض وربط حساب Vaultify الحقيقي، لكن Meta ما زالت تعرض حالة النقل غير متصلة. افتح WhatsApp Business → الإعدادات → الحساب → Business Platform وأكمل ربط Business Platform أو امسح QR إذا ظهر. بعد أن تصبح الحالة CONNECTED نختبر الرسائل.','warn');
-      btn.textContent='التفويض محفوظ — أكمل Business Platform';
+      status('تم حفظ التفويض وربط حساب Vaultify الحقيقي، لكن النقل ما زال غير متصل. افتح ماسح QR من WhatsApp Business على الجوال، ثم اضغط الزر أعلاه من الماك لإعادة فتح Meta وإظهار QR/رمز الربط.','warn');
+      enablePairingRetry();
     }else{
-      status('تم حفظ التفويض، لكن تفعيل النقل لم يكتمل بعد. أكمل أي خطوة ربط أو QR تعرضها Meta داخل WhatsApp Business قبل اختبار الرسائل.','warn');
-      btn.textContent='التفويض محفوظ — النقل غير مكتمل';
+      status('تم حفظ التفويض، لكن تفعيل النقل لم يكتمل بعد. اضغط الزر أعلاه لإعادة فتح Meta وإكمال QR أو خطوة Business Platform.','warn');
+      enablePairingRetry();
     }
   }catch(e){busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify. حاول مرة أخرى بعد تحديث الصفحة.','err');}
 }
@@ -94,7 +95,7 @@ btn.addEventListener('click',()=>{
     const ar=response?.authResponse||{};authCode=ar.code?String(ar.code):null;
     if(!authCode){btn.disabled=false;status('لم يصل OAuth code صالح من Meta.','err');return;}
     if(sessionInfo?.waba_id){status('وصل OAuth code وبيانات Meta. جارٍ التحقق...');finalize(false);return;}
-    status('وصل OAuth code. ننتظر Session Info لثوانٍ، ثم نكمل تلقائيًا إذا لم ترسلها Meta.');
+    status('وصل OAuth code. أبقِ نافذة Meta مفتوحة لإكمال Business Platform/QR. إذا لم ترسل Meta Session Info سنحفظ التفويض تلقائيًا بعد ثوانٍ.');
     fallbackTimer=setTimeout(()=>finalize(true),6000);
   },{config_id:CONFIG_ID,auth_type:'rerequest',response_type:'code',override_default_response_type:true,extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}});
 });
