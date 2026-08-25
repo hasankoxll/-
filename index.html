@@ -15,11 +15,11 @@
   <div class="brand">Vaultify | فولتڤاي</div>
   <div class="badge">Meta Embedded Signup — Production</div>
   <h1>ربط WhatsApp Business</h1>
-  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. لن يعتبر Vaultify القناة جاهزة للتشغيل إلا بعد استلام Session Info الحقيقية ثم إثبات النقل برسالة واتساب فعلية.</p>
+  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. يحفظ Vaultify التفويض بعد اكتمال Meta، ثم لا يعتبر القناة جاهزة نهائيًا إلا بعد إثبات النقل برسالة واتساب فعلية.</p>
   <section class="card">
     <button id="connect" disabled>جارٍ تجهيز Meta...</button>
     <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
-    <div class="steps">1. اضغط زر الربط.<br>2. أكمل خطوات Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. يحفظ Vaultify التفويض بعد Session Info الحقيقية، ثم يتحقق من النقل بأول رسالة فعلية.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. اختر حساب Vaultify الحقيقي فقط وأكمل Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. بعد الرجوع، ينتظر Vaultify Session Info قليلًا ثم يكمل تلقائيًا عبر OAuth إذا لم ترسلها Meta.</div>
     <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
   </section>
 </main>
@@ -34,14 +34,21 @@ const FINISH_EVENTS=new Set(['FINISH','FINISH_ONLY_WABA','FINISH_WHATSAPP_BUSINE
 let authCode=null;
 let sessionInfo=null;
 let busy=false;
+let fallbackTimer=null;
 function status(text,type=''){statusEl.textContent=text;statusEl.className='status'+(type?' '+type:'');}
 function trustedMetaOrigin(origin){try{const u=new URL(origin);return u.protocol==='https:'&&(u.hostname==='facebook.com'||u.hostname.endsWith('.facebook.com'));}catch{return false;}}
-async function finalize(){
-  if(busy||!authCode||!sessionInfo?.waba_id||!sessionInfo?.phone_number_id)return;
-  busy=true;btn.disabled=true;status('وصلت جلسة Coexistence الحقيقية. جارٍ التحقق والحفظ...');
+function normalizedSession(raw,ev){const x=raw&&typeof raw==='object'?raw:{};const waba=x.waba_id||x.wabaId||x.whatsapp_business_account_id||x.business_account_id||null;const phone=x.phone_number_id||x.phoneNumberId||null;return {...x,waba_id:waba?String(waba):null,phone_number_id:phone?String(phone):null,event:ev};}
+async function finalize(forceOAuthFallback=false){
+  if(busy||!authCode)return;
+  if(!forceOAuthFallback&&!sessionInfo?.waba_id)return;
+  busy=true;btn.disabled=true;
+  if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
+  status(sessionInfo?.waba_id?'وصلت بيانات Meta. جارٍ التحقق والحفظ...':'اكتمل OAuth. جارٍ اكتشاف حساب واتساب المختار والتحقق منه...');
   try{
-    const payload={code:authCode,waba_id:String(sessionInfo.waba_id),phone_number_id:String(sessionInfo.phone_number_id),event:String(sessionInfo.event||'')};
-    if(sessionInfo.business_id||sessionInfo.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
+    const payload={code:authCode,event:String(sessionInfo?.event||'OAUTH_FALLBACK')};
+    if(sessionInfo?.waba_id)payload.waba_id=String(sessionInfo.waba_id);
+    if(sessionInfo?.phone_number_id)payload.phone_number_id=String(sessionInfo.phone_number_id);
+    if(sessionInfo?.business_id||sessionInfo?.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
     const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){busy=false;btn.disabled=false;status('تعذر إكمال الربط: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status)),'err');return;}
@@ -49,10 +56,10 @@ async function finalize(){
       status('تم التحقق من الربط والنقل بنجاح. القناة جاهزة للتشغيل.','ok');
       btn.textContent='القناة جاهزة';
     }else{
-      status('تم حفظ التفويض والربط لدى Vaultify. أرسل رسالة واتساب فعلية إلى الرقم لإكمال التحقق من النقل تلقائيًا.','ok');
+      status('تم حفظ التفويض وربط حساب واتساب الحقيقي. أرسل رسالة واتساب فعلية إلى الرقم لإكمال التحقق من النقل تلقائيًا.','ok');
       btn.textContent='تم حفظ التفويض';
     }
-  }catch{busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify.','err');}
+  }catch(e){busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify. حاول مرة أخرى بعد تحديث الصفحة.','err');}
 }
 window.addEventListener('message',event=>{
   if(!trustedMetaOrigin(event.origin))return;
@@ -60,13 +67,14 @@ window.addEventListener('message',event=>{
   if(!data||data.type!=='WA_EMBEDDED_SIGNUP')return;
   const ev=String(data.event||'');
   if(FINISH_EVENTS.has(ev)){
-    const x=data.data&&typeof data.data==='object'?data.data:{};
-    sessionInfo={...x,event:ev};
-    status(authCode?'تم استلام Session Info والتفويض. جارٍ التحقق...':'تم استلام Session Info. جارٍ انتظار التفويض...');
-    finalize();
+    sessionInfo=normalizedSession(data.data,ev);
+    status(authCode?'تم استلام نتيجة Meta والتفويض. جارٍ التحقق...':'تم استلام نتيجة Meta. جارٍ انتظار OAuth code...');
+    finalize(false);
   }else if(ev==='ERROR'){
+    if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
     btn.disabled=false;status('Meta أبلغت عن خطأ: '+(data.data?.error_message||'غير معروف'),'err');
   }else if(ev==='CANCEL'){
+    if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
     btn.disabled=false;status('تم إلغاء الربط داخل Meta.','err');
   }
 });
@@ -77,12 +85,13 @@ window.fbAsyncInit=function(){
 (function(d,s,id){if(d.getElementById(id))return;const js=d.createElement(s);js.id=id;js.async=true;js.defer=true;js.crossOrigin='anonymous';js.src='https://connect.facebook.net/en_US/sdk.js';js.onerror=()=>status('تعذر تحميل Meta SDK.','err');d.head.appendChild(js);})(document,'script','facebook-jssdk');
 btn.addEventListener('click',()=>{
   if(typeof FB==='undefined'){status('Meta SDK غير جاهز بعد.','err');return;}
-  authCode=null;sessionInfo=null;busy=false;btn.disabled=true;status('جارٍ فتح Meta...');
+  authCode=null;sessionInfo=null;busy=false;if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}btn.disabled=true;status('جارٍ فتح Meta...');
   FB.login(response=>{
     const ar=response?.authResponse||{};authCode=ar.code?String(ar.code):null;
     if(!authCode){btn.disabled=false;status('لم يصل OAuth code صالح من Meta.','err');return;}
-    status(sessionInfo?'وصل OAuth code وSession Info. جارٍ التحقق...':'وصل OAuth code. ننتظر Session Info الحقيقية من Meta.');
-    finalize();
+    if(sessionInfo?.waba_id){status('وصل OAuth code وبيانات Meta. جارٍ التحقق...');finalize(false);return;}
+    status('وصل OAuth code. ننتظر Session Info لثوانٍ، ثم نكمل تلقائيًا إذا لم ترسلها Meta.');
+    fallbackTimer=setTimeout(()=>finalize(true),6000);
   },{config_id:CONFIG_ID,auth_type:'rerequest',response_type:'code',override_default_response_type:true,extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}});
 });
 </script>
