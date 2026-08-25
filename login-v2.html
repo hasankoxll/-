@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Vaultify | تسجيل الدخول الآمن</title>
+<style>
+:root{--bg:#071115;--panel:#0d1b20;--line:#20363d;--text:#f4f8f7;--muted:#91a5ab;--green:#6fe0b0;--green2:#39bd8b;--red:#ff9ca5;--gold:#ffd782}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 75% -10%,rgba(54,159,124,.2),transparent 32%),linear-gradient(180deg,#071115,#061015);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}
+.card{width:min(94vw,480px);padding:30px;border:1px solid var(--line);border-radius:24px;background:rgba(13,27,32,.97);box-shadow:0 35px 110px rgba(0,0,0,.38)}
+.brand{font-size:25px;font-weight:900;color:var(--green)}h1{font-size:30px;margin:26px 0 8px}.lead{color:var(--muted);line-height:1.8;font-size:15px}
+label{display:block;margin:22px 0 8px;color:#c8d5d8;font-size:13px}.input{width:100%;height:54px;border:1px solid #2b444d;border-radius:14px;background:#09181c;color:#fff;padding:0 14px;font:inherit;outline:none}.input:focus{border-color:#4ab18b;box-shadow:0 0 0 3px rgba(74,177,139,.12)}
+.btn{width:100%;height:56px;border:0;border-radius:14px;background:linear-gradient(90deg,var(--green2),var(--green));color:#051b14;font:inherit;font-weight:900;margin-top:14px;cursor:pointer}.btn:active{transform:translateY(1px)}
+.note,.msg{margin-top:15px;padding:13px 14px;border:1px solid var(--line);border-radius:13px;color:var(--muted);font-size:13px;line-height:1.7}.success{color:#c8f8e4;border-color:#2c755d;background:#0c2a21}.error{color:#ffd5d9;border-color:#73363e;background:#2a1216}.tiny{margin-top:18px;font-size:11px;color:#70868d;line-height:1.7}.hide{display:none}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand">Vaultify | فولتڤاي</div>
+  <h1>الدخول إلى Revenue OS</h1>
+  <div class="lead">هذه صفحة الدخول الجديدة. الزر يعمل كإرسال مباشر من السيرفر ولا يعتمد على JavaScript في المتصفح.</div>
+
+  <div id="sent" class="msg success hide"><b>تم إرسال رابط الدخول.</b><br>افتح بريد <b>hello@getvaultify.io</b> واضغط رسالة تسجيل الدخول.</div>
+  <div id="err" class="msg error hide"><b>تعذر إرسال الرابط.</b><br>أعد المحاولة، وإذا استمرت المشكلة سأفحص سجل Auth مباشرة.</div>
+
+  <form action="/api/send-login" method="GET">
+    <label for="email">البريد الإلكتروني</label>
+    <input class="input" id="email" name="email" type="email" autocomplete="email" value="hello@getvaultify.io" required>
+    <button class="btn" type="submit">إرسال رابط الدخول</button>
+  </form>
+
+  <div class="note">بعد الإرسال سيتم إرجاعك لهذه الصفحة مع تأكيد النجاح. لا توجد كلمة مرور.</div>
+  <div class="tiny">الدخول محمي عبر Supabase Auth. بيانات لوحة العميل لا تظهر إلا بعد تسجيل الدخول ووجود عضوية Tenant صريحة.</div>
+</main>
+<script>
+const q=new URLSearchParams(location.search);if(q.get('sent')==='1')document.getElementById('sent').classList.remove('hide');if(q.get('error'))document.getElementById('err').classList.remove('hide');
+</script>
+</body>
+</html>
