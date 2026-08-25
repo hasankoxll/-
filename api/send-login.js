@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   const SUPABASE_URL = 'https://ittixiicaeizihyzawju.supabase.co';
   const PUBLISHABLE_KEY = 'sb_publishable_SIlfF6-ctdJL2WTg3eTlKQ_5F3LKsSl';
-  const redirectTo = 'https://vaultify-whatsapp-connect.vercel.app/dashboard/';
+  const redirectTo = 'https://vaultify-whatsapp-connect.vercel.app/dashboard#billing';
 
   try {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, {
