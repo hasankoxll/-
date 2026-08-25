@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark">
   <title>Vaultify | ربط WhatsApp Business</title>
   <style>
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#07151b;color:#f4f8f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}body{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 70% 0,#12362f 0,transparent 35%),linear-gradient(180deg,#0d2422,#07151b 52%,#061117)}main{width:min(92vw,720px);padding:42px 18px 64px}.brand{font-size:28px;font-weight:850;color:#83dfb7}.badge{display:inline-block;margin-top:18px;padding:8px 12px;border:1px solid #31505b;border-radius:999px;color:#b6c7cd;font-size:13px}h1{font-size:clamp(38px,8vw,54px);line-height:1.08;margin:22px 0 14px}.lead{font-size:17px;line-height:1.9;color:#a9b8bc}.card{margin-top:30px;padding:26px;border:1px solid #29424b;border-radius:26px;background:rgba(14,34,41,.94);box-shadow:0 22px 70px rgba(0,0,0,.24)}button{width:100%;min-height:62px;border:0;border-radius:18px;background:linear-gradient(90deg,#43c89d,#77d8b0);color:#061619;font-size:19px;font-weight:850;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:18px;padding:16px 18px;border:1px solid #2b454e;border-radius:16px;background:#10252d;color:#c8d4d7;line-height:1.7}.status.ok{border-color:#2e9b74;background:#0d2b23;color:#baf1d7}.status.err{border-color:#9e414a;background:#2a1b20;color:#ffd0d4}.steps{margin-top:22px;color:#879ba1;font-size:14px;line-height:2}.tiny{margin-top:20px;color:#71868d;font-size:12px;line-height:1.7}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#07151b;color:#f4f8f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}body{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 70% 0,#12362f 0,transparent 35%),linear-gradient(180deg,#0d2422,#07151b 52%,#061117)}main{width:min(92vw,720px);padding:42px 18px 64px}.brand{font-size:28px;font-weight:850;color:#83dfb7}.badge{display:inline-block;margin-top:18px;padding:8px 12px;border:1px solid #31505b;border-radius:999px;color:#b6c7cd;font-size:13px}h1{font-size:clamp(38px,8vw,54px);line-height:1.08;margin:22px 0 14px}.lead{font-size:17px;line-height:1.9;color:#a9b8bc}.card{margin-top:30px;padding:26px;border:1px solid #29424b;border-radius:26px;background:rgba(14,34,41,.94);box-shadow:0 22px 70px rgba(0,0,0,.24)}button{width:100%;min-height:62px;border:0;border-radius:18px;background:linear-gradient(90deg,#43c89d,#77d8b0);color:#061619;font-size:19px;font-weight:850;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:18px;padding:16px 18px;border:1px solid #2b454e;border-radius:16px;background:#10252d;color:#c8d4d7;line-height:1.7}.status.ok{border-color:#2e9b74;background:#0d2b23;color:#baf1d7}.status.err{border-color:#9e414a;background:#2a1b20;color:#ffd0d4}.status.warn{border-color:#b68b35;background:#2b2416;color:#ffe4a6}.steps{margin-top:22px;color:#879ba1;font-size:14px;line-height:2}.tiny{margin-top:20px;color:#71868d;font-size:12px;line-height:1.7}
   </style>
 </head>
 <body>
@@ -15,11 +15,11 @@
   <div class="brand">Vaultify | فولتڤاي</div>
   <div class="badge">Meta Embedded Signup — Production</div>
   <h1>ربط WhatsApp Business</h1>
-  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. يحفظ Vaultify التفويض بعد اكتمال Meta، ثم لا يعتبر القناة جاهزة نهائيًا إلا بعد إثبات النقل برسالة واتساب فعلية.</p>
+  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. يحفظ Vaultify التفويض بعد اكتمال Meta، ثم لا يعتبر القناة جاهزة نهائيًا إلا بعد أن تصبح حالة النقل متصلة فعليًا.</p>
   <section class="card">
     <button id="connect" disabled>جارٍ تجهيز Meta...</button>
     <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
-    <div class="steps">1. اضغط زر الربط.<br>2. اختر حساب Vaultify الحقيقي فقط وأكمل Meta حتى النهاية.<br>3. إذا ظهر QR امسحه من WhatsApp Business → Account → Business Platform.<br>4. بعد الرجوع، ينتظر Vaultify Session Info قليلًا ثم يكمل تلقائيًا عبر OAuth إذا لم ترسلها Meta.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. اختر حساب Vaultify الحقيقي فقط وأكمل Meta حتى النهاية.<br>3. إذا طلب Meta إكمال ربط تطبيق واتساب الأعمال، افتح WhatsApp Business → الإعدادات → الحساب → Business Platform واتبع خطوة الربط/QR.<br>4. لا ترسل اختبارًا قبل أن تعرض الصفحة أن حالة النقل أصبحت متصلة.</div>
     <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
   </section>
 </main>
@@ -52,12 +52,16 @@ async function finalize(forceOAuthFallback=false){
     const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){busy=false;btn.disabled=false;status('تعذر إكمال الربط: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status)),'err');return;}
-    if(j?.transport_verified===true){
+    const transportConnected=String(j?.status||'').toUpperCase()==='CONNECTED';
+    if(j?.transport_verified===true||transportConnected){
       status('تم التحقق من الربط والنقل بنجاح. القناة جاهزة للتشغيل.','ok');
       btn.textContent='القناة جاهزة';
+    }else if(j?.is_on_biz_app===true){
+      status('تم حفظ التفويض وربط حساب Vaultify الحقيقي، لكن Meta ما زالت تعرض حالة النقل غير متصلة. افتح WhatsApp Business → الإعدادات → الحساب → Business Platform وأكمل ربط Business Platform أو امسح QR إذا ظهر. بعد أن تصبح الحالة CONNECTED نختبر الرسائل.','warn');
+      btn.textContent='التفويض محفوظ — أكمل Business Platform';
     }else{
-      status('تم حفظ التفويض وربط حساب واتساب الحقيقي. أرسل رسالة واتساب فعلية إلى الرقم لإكمال التحقق من النقل تلقائيًا.','ok');
-      btn.textContent='تم حفظ التفويض';
+      status('تم حفظ التفويض، لكن تفعيل النقل لم يكتمل بعد. أكمل أي خطوة ربط أو QR تعرضها Meta داخل WhatsApp Business قبل اختبار الرسائل.','warn');
+      btn.textContent='التفويض محفوظ — النقل غير مكتمل';
     }
   }catch(e){busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify. حاول مرة أخرى بعد تحديث الصفحة.','err');}
 }
