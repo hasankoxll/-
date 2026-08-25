@@ -15,13 +15,13 @@
   <div class="brand">Vaultify | فولتڤاي</div>
   <div class="badge">Meta Embedded Signup — Production</div>
   <h1>ربط WhatsApp Business</h1>
-  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. يحفظ Vaultify التفويض بعد اكتمال Meta، ثم لا يعتبر القناة جاهزة نهائيًا إلا بعد أن تصبح حالة النقل متصلة فعليًا.</p>
-  <div class="trial"><strong>تجربة مجانية لمدة 7 أيام فقط.</strong> تبدأ تلقائيًا بعد أول رسالة واتساب حقيقية تؤكد نجاح النقل، ولا تُمنح أكثر من مرة لنفس حساب العميل. بعد انتهاء المدة يتطلب استمرار التشغيل اشتراكًا فعالًا.</div>
+  <p class="lead">اربط حساب واتساب الأعمال مع Vaultify عبر Meta مباشرة. لن يعتبر Vaultify القناة جاهزة إلا بعد اكتمال Coexistence الفعلي وتحول رقم Meta إلى Cloud API متصل.</p>
+  <div class="trial"><strong>التجربة المجانية 7 أيام.</strong> تبدأ تلقائيًا بعد أول رسالة واتساب حقيقية فقط، ولا تُحرق أثناء إعداد Meta أو QR.</div>
   <section class="card">
     <button id="connect" disabled>جارٍ تجهيز Meta...</button>
     <div id="status" class="status">يتم تحميل واجهة Meta الرسمية.</div>
-    <div class="steps">1. اضغط زر الربط.<br>2. اختر حساب Vaultify الحقيقي فقط وأكمل Meta حتى النهاية.<br>3. إذا كان WhatsApp Business على الجوال يطلب QR، اترك ماسح QR مفتوحًا واضغط من هذه الصفحة «إظهار QR / إكمال Business Platform» لفتح جلسة Meta على الماك.<br>4. امسح QR الذي تعرضه Meta من تطبيق WhatsApp Business، ولا تختبر الرسائل قبل أن تصبح حالة النقل CONNECTED.</div>
-    <div class="tiny">Production App + Production Embedded Signup Configuration.</div>
+    <div class="steps">1. اضغط زر الربط.<br>2. أكمل Meta حتى تظهر خطوة WhatsApp Business App / Business Platform.<br>3. إذا ظهر QR، افتح WhatsApp Business على الجوال ثم امسح QR وأكمل حتى النهاية.<br>4. لا تغلق نافذة Meta عند مجرد منح API Access؛ المطلوب إكمال Business App Onboarding فعليًا.</div>
+    <div class="tiny">Production App + Production Coexistence Configuration.</div>
   </section>
 </main>
 <script>
@@ -31,73 +31,53 @@ const CONFIG_ID='1622801019506151';
 const API='https://ittixiicaeizihyzawju.supabase.co/functions/v1/meta-embedded-signup-production';
 const btn=document.getElementById('connect');
 const statusEl=document.getElementById('status');
-const FINISH_EVENTS=new Set(['FINISH','FINISH_ONLY_WABA','FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING','FINISH_GRANT_ONLY_API_ACCESS']);
 let authCode=null;
 let sessionInfo=null;
 let busy=false;
-let fallbackTimer=null;
 function status(text,type=''){statusEl.textContent=text;statusEl.className='status'+(type?' '+type:'');}
 function trustedMetaOrigin(origin){try{const u=new URL(origin);return u.protocol==='https:'&&(u.hostname==='facebook.com'||u.hostname.endsWith('.facebook.com'));}catch{return false;}}
-function normalizedSession(raw,ev){const x=raw&&typeof raw==='object'?raw:{};const waba=x.waba_id||x.wabaId||x.whatsapp_business_account_id||x.business_account_id||null;const phone=x.phone_number_id||x.phoneNumberId||null;return {...x,waba_id:waba?String(waba):null,phone_number_id:phone?String(phone):null,event:ev};}
-function enablePairingRetry(){busy=false;btn.disabled=false;btn.textContent='إظهار QR / إكمال Business Platform';}
-async function finalize(forceOAuthFallback=false){
-  if(busy||!authCode)return;
-  if(!forceOAuthFallback&&!sessionInfo?.waba_id)return;
-  busy=true;btn.disabled=true;
-  if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
-  status(sessionInfo?.waba_id?'وصلت بيانات Meta. جارٍ التحقق والحفظ...':'اكتمل OAuth. جارٍ اكتشاف حساب واتساب المختار والتحقق منه...');
+function normalize(raw,ev){const x=raw&&typeof raw==='object'?raw:{};return {...x,event:ev,waba_id:x.waba_id||x.wabaId||x.whatsapp_business_account_id||x.business_account_id||null,phone_number_id:x.phone_number_id||x.phoneNumberId||null};}
+function retryButton(){busy=false;btn.disabled=false;btn.textContent='إكمال Coexistence / إظهار QR';}
+async function finalize(){
+  if(busy||!authCode||!sessionInfo?.waba_id||!sessionInfo?.phone_number_id)return;
+  busy=true;btn.disabled=true;status('اكتملت جلسة Coexistence في Meta. جارٍ التحقق من حالة النقل الفعلية...');
   try{
-    const payload={code:authCode,event:String(sessionInfo?.event||'OAUTH_FALLBACK')};
-    if(sessionInfo?.waba_id)payload.waba_id=String(sessionInfo.waba_id);
-    if(sessionInfo?.phone_number_id)payload.phone_number_id=String(sessionInfo.phone_number_id);
-    if(sessionInfo?.business_id||sessionInfo?.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
+    const payload={code:authCode,waba_id:String(sessionInfo.waba_id),phone_number_id:String(sessionInfo.phone_number_id),event:String(sessionInfo.event||'')};
+    if(sessionInfo.business_id||sessionInfo.businessId)payload.business_id=String(sessionInfo.business_id||sessionInfo.businessId);
     const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok){busy=false;btn.disabled=false;status('تعذر إكمال الربط: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status)),'err');return;}
-    const transportConnected=String(j?.status||'').toUpperCase()==='CONNECTED';
-    if(j?.transport_verified===true||transportConnected){
-      status('تم التحقق من الربط والنقل بنجاح. القناة جاهزة، وتبدأ تجربة الـ7 أيام عند أول رسالة واتساب حقيقية.','ok');
-      btn.textContent='القناة جاهزة';
-    }else if(j?.is_on_biz_app===true){
-      status('تم حفظ التفويض وربط حساب Vaultify الحقيقي، لكن النقل ما زال غير متصل. افتح ماسح QR من WhatsApp Business على الجوال، ثم اضغط الزر أعلاه من الماك لإعادة فتح Meta وإظهار QR/رمز الربط.','warn');
-      enablePairingRetry();
-    }else{
-      status('تم حفظ التفويض، لكن تفعيل النقل لم يكتمل بعد. اضغط الزر أعلاه لإعادة فتح Meta وإكمال QR أو خطوة Business Platform.','warn');
-      enablePairingRetry();
-    }
-  }catch(e){busy=false;btn.disabled=false;status('تعذر الاتصال بخادم Vaultify. حاول مرة أخرى بعد تحديث الصفحة.','err');}
+    if(!r.ok){retryButton();status('Meta لم تكمل النقل بعد: '+(j?.meta?.message||j?.message||j?.error||('HTTP '+r.status))+'. أعد فتح الربط وأكمل QR حتى النهاية.','warn');return;}
+    const connected=String(j?.status||'').toUpperCase()==='CONNECTED' && String(j?.platform_type||'').toUpperCase()==='CLOUD_API';
+    if(connected||j?.transport_verified===true){status('تم ربط WhatsApp Business عبر Coexistence بنجاح. القناة جاهزة، وتبدأ التجربة عند أول رسالة حقيقية.','ok');btn.textContent='القناة جاهزة';}
+    else{retryButton();status('تم منح الصلاحية، لكن Meta لم تحول الرقم إلى Cloud API متصل بعد. أكمل QR / Business App Onboarding حتى النهاية.','warn');}
+  }catch{retryButton();status('تعذر الاتصال بخادم Vaultify. أعد المحاولة.','err');}
 }
 window.addEventListener('message',event=>{
   if(!trustedMetaOrigin(event.origin))return;
   let data=event.data;if(typeof data==='string'){try{data=JSON.parse(data);}catch{return;}}
   if(!data||data.type!=='WA_EMBEDDED_SIGNUP')return;
   const ev=String(data.event||'');
-  if(FINISH_EVENTS.has(ev)){
-    sessionInfo=normalizedSession(data.data,ev);
-    status(authCode?'تم استلام نتيجة Meta والتفويض. جارٍ التحقق...':'تم استلام نتيجة Meta. جارٍ انتظار OAuth code...');
-    finalize(false);
-  }else if(ev==='ERROR'){
-    if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
-    btn.disabled=false;status('Meta أبلغت عن خطأ: '+(data.data?.error_message||'غير معروف'),'err');
-  }else if(ev==='CANCEL'){
-    if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
-    btn.disabled=false;status('تم إلغاء الربط داخل Meta.','err');
-  }
+  if(ev==='FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'){
+    sessionInfo=normalize(data.data,ev);status(authCode?'وصلت نتيجة Coexistence الحقيقية. جارٍ التحقق...':'اكتمل Coexistence. جارٍ انتظار OAuth code...');finalize();
+  }else if(ev==='FINISH_GRANT_ONLY_API_ACCESS'){
+    sessionInfo=normalize(data.data,ev);retryButton();status('تم منح API Access فقط، لكن Coexistence لم يكتمل. اضغط الزر مرة أخرى وأكمل خطوة WhatsApp Business App / QR حتى النهاية.','warn');
+  }else if(ev==='FINISH'||ev==='FINISH_ONLY_WABA'){
+    sessionInfo=normalize(data.data,ev);
+    if(sessionInfo?.waba_id&&sessionInfo?.phone_number_id){status('وصلت بيانات Meta. سأتحقق من النقل، ولن أعتبرها جاهزة إلا إذا أصبحت Cloud API CONNECTED.');finalize();}
+    else{retryButton();status('Meta أنهت خطوة جزئية فقط. أعد الربط وأكمل WhatsApp Business App Onboarding.','warn');}
+  }else if(ev==='ERROR'){retryButton();status('Meta أبلغت عن خطأ: '+(data.data?.error_message||'غير معروف'),'err');}
+  else if(ev==='CANCEL'){retryButton();status('تم إلغاء الربط داخل Meta.','warn');}
 });
-window.fbAsyncInit=function(){
-  try{FB.init({appId:APP_ID,cookie:true,xfbml:false,version:'v25.0'});btn.disabled=false;btn.textContent='ربط WhatsApp Business';status('جاهز للربط.');}
-  catch{status('تعذر تهيئة Meta SDK.','err');}
-};
+window.fbAsyncInit=function(){try{FB.init({appId:APP_ID,cookie:true,xfbml:false,version:'v25.0'});btn.disabled=false;btn.textContent='ربط WhatsApp Business';status('جاهز. المطلوب إكمال Coexistence حتى QR/Business App Onboarding.');}catch{status('تعذر تهيئة Meta SDK.','err');}};
 (function(d,s,id){if(d.getElementById(id))return;const js=d.createElement(s);js.id=id;js.async=true;js.defer=true;js.crossOrigin='anonymous';js.src='https://connect.facebook.net/en_US/sdk.js';js.onerror=()=>status('تعذر تحميل Meta SDK.','err');d.head.appendChild(js);})(document,'script','facebook-jssdk');
 btn.addEventListener('click',()=>{
   if(typeof FB==='undefined'){status('Meta SDK غير جاهز بعد.','err');return;}
-  authCode=null;sessionInfo=null;busy=false;if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}btn.disabled=true;status('جارٍ فتح Meta...');
+  authCode=null;sessionInfo=null;busy=false;btn.disabled=true;status('جارٍ فتح Meta Coexistence...');
   FB.login(response=>{
     const ar=response?.authResponse||{};authCode=ar.code?String(ar.code):null;
-    if(!authCode){btn.disabled=false;status('لم يصل OAuth code صالح من Meta.','err');return;}
-    if(sessionInfo?.waba_id){status('وصل OAuth code وبيانات Meta. جارٍ التحقق...');finalize(false);return;}
-    status('وصل OAuth code. أبقِ نافذة Meta مفتوحة لإكمال Business Platform/QR. إذا لم ترسل Meta Session Info سنحفظ التفويض تلقائيًا بعد ثوانٍ.');
-    fallbackTimer=setTimeout(()=>finalize(true),6000);
+    if(!authCode){retryButton();status('لم يصل OAuth code صالح من Meta.','err');return;}
+    if(sessionInfo?.event==='FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'){status('وصل OAuth code وCoexistence Session. جارٍ التحقق...');finalize();}
+    else{status('وصل OAuth code. لا تغلق Meta؛ أكمل WhatsApp Business App / QR حتى النهاية.');btn.disabled=true;}
   },{config_id:CONFIG_ID,auth_type:'rerequest',response_type:'code',override_default_response_type:true,extras:{setup:{},featureType:'whatsapp_business_app_onboarding',sessionInfoVersion:'3'}});
 });
 </script>
