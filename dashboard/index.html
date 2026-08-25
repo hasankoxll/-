@@ -7,7 +7,20 @@
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<div class="app">
+<div id="loginGate" class="login-gate">
+  <div class="login-card">
+    <div class="brand login-brand"><span class="mark">V</span><div><b>Vaultify</b><small>Revenue OS</small></div></div>
+    <h1>دخول لوحة الإيرادات</h1>
+    <p class="sub">البيانات محمية بحساب Vaultify وعضوية النشاط. لا تُعرض بيانات العملاء بدون صلاحية.</p>
+    <form id="loginForm">
+      <label>البريد الإلكتروني</label><input id="email" type="email" autocomplete="email" required placeholder="name@business.com">
+      <label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+      <button class="cta" type="submit">تسجيل الدخول</button>
+    </form>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+<div id="appRoot" class="app hidden">
   <aside class="sidebar">
     <div class="brand"><span class="mark">V</span><div><b>Vaultify</b><small>Revenue OS</small></div></div>
     <nav id="nav">
@@ -16,16 +29,18 @@
       <button data-view="billing">الاشتراك والفوترة</button>
       <button data-view="integrations">التكاملات</button>
     </nav>
-    <div class="side-foot">Vaultify | فولتڤاي<br><span>Enterprise AI & Revenue Systems</span></div>
+    <div class="side-foot">Vaultify | فولتڤاي<br><span id="tenantName">Enterprise AI & Revenue Systems</span></div>
   </aside>
   <main>
-    <header><div><small>مساحة العميل</small><h1 id="pageTitle">مركز الإيرادات</h1></div><div class="header-actions"><span class="pill good">التجربة: نشطة</span><span class="avatar">V</span></div></header>
+    <header><div><small>مساحة العميل</small><h1 id="pageTitle">مركز الإيرادات</h1></div><div class="header-actions"><span id="entitlementPill" class="pill">جارٍ التحميل</span><button id="logout" class="logout">خروج</button><span class="avatar">V</span></div></header>
+    <div id="globalError"></div>
     <section id="overview" class="view active"></section>
     <section id="trial" class="view"></section>
     <section id="billing" class="view"></section>
     <section id="integrations" class="view"></section>
   </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module" src="./app.js"></script>
 </body>
 </html>
