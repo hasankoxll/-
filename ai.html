@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vaultify AI Revenue Agent</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07090d;--card:#0f131a;--line:#222a35;--text:#f5f7fb;--muted:#8f9bad;--accent:#c7ff5e;--soft:#151b24;--good:#66e3a4;--warn:#ffc857}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0%,#172033 0,transparent 28%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}.wrap{max-width:1280px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border:1px solid #344155;border-radius:14px;display:grid;place-items:center;font-weight:900;background:#0d1118}.brand h1{font-size:20px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.badge{padding:8px 11px;border:1px solid #334052;border-radius:999px;background:#0c1118;color:#cad3df;font-size:12px}.hero{border:1px solid var(--line);background:linear-gradient(135deg,#111722,#0b0f15);border-radius:22px;padding:24px;display:grid;grid-template-columns:1.5fr .8fr;gap:20px;margin-bottom:18px}.hero h2{font-size:30px;margin:0 0 9px}.hero p{color:#aab4c2;line-height:1.8;margin:0;max-width:760px}.state{border:1px solid #2f3948;background:#0a0e14;border-radius:18px;padding:18px}.state strong{display:block;font-size:28px;margin-top:8px}.green{color:var(--accent)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}.metric,.card{background:rgba(15,19,26,.94);border:1px solid var(--line);border-radius:18px;padding:18px}.metric small,.muted{color:var(--muted)}.metric b{display:block;font-size:30px;margin-top:8px}.cols{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.card h3{margin:0 0 14px;font-size:16px}.list{display:grid;gap:9px}.row{border:1px solid #202936;background:#0b1017;border-radius:14px;padding:13px;display:flex;justify-content:space-between;align-items:center;gap:12px}.row .main{min-width:0}.row .main b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row .main span{display:block;color:var(--muted);font-size:12px;margin-top:4px}.score{min-width:44px;height:44px;border-radius:12px;background:#15200f;border:1px solid #31441f;display:grid;place-items:center;color:var(--accent);font-weight:800}.offers{display:grid;gap:10px}.offer{padding:14px;border:1px solid #26303d;border-radius:14px;background:#0b1017}.offer header{display:flex;justify-content:space-between}.offer b{font-size:17px}.price{color:var(--accent)}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{font-size:11px;border:1px solid #2b3645;border-radius:999px;padding:5px 8px;color:#aeb8c5}.empty{color:var(--muted);padding:18px;text-align:center;border:1px dashed #2b3440;border-radius:14px}.loading{position:fixed;inset:0;display:grid;place-items:center;background:#07090d;z-index:9}.loading div{color:#cbd4df}.error{border:1px solid #633;background:#211;padding:14px;border-radius:14px;color:#f8b4b4}.footer{color:#687485;font-size:11px;text-align:center;margin-top:22px}@media(max-width:850px){.hero,.cols{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero h2{font-size:24px}.wrap{padding:15px}}
+</style>
+</head>
+<body>
+<div class="loading" id="loading"><div>جاري تحميل Vaultify AI…</div></div>
+<div class="wrap" id="app" hidden>
+  <div class="top"><div class="brand"><div class="logo">V</div><div><h1>Vaultify AI</h1><p>Revenue Agent • Lead-to-Revenue System</p></div></div><div class="badge" id="tenantBadge">—</div></div>
+  <section class="hero">
+    <div><h2>موظف مبيعات AI يحوّل الـLead إلى إيراد.</h2><p>تأهيل تلقائي، Lead Scoring، Sequences، مهام ومواعيد، ثم قياس القيمة والإيراد في مسار واحد. هذه النسخة منفصلة وظيفيًا عن WhatsApp Production لكنها تستخدم البنية الأساسية نفسها.</p></div>
+    <div class="state"><small class="muted">حالة الـAgent</small><strong id="agentStatus">—</strong><span class="muted" id="agentGoal">—</span></div>
+  </section>
+  <section class="grid">
+    <div class="metric"><small>كل العملاء المحتملين</small><b id="leadCount">0</b></div>
+    <div class="metric"><small>Leads مؤهلون</small><b id="qualifiedCount">0</b></div>
+    <div class="metric"><small>Hot Leads</small><b id="hotCount" class="green">0</b></div>
+  </section>
+  <section class="cols">
+    <div class="card"><h3>Hot Leads</h3><div class="list" id="hotLeads"></div></div>
+    <div class="card"><h3>الباقات التجارية</h3><div class="offers" id="offers"></div></div>
+  </section>
+  <section class="cols" style="margin-top:14px">
+    <div class="card"><h3>Sales Sequences</h3><div class="list" id="sequences"></div></div>
+    <div class="card"><h3>المهام القادمة</h3><div class="list" id="tasks"></div></div>
+  </section>
+  <div class="footer">Vaultify AI Revenue Agent • Internal MVP</div>
+</div>
+<script>
+const SUPABASE_URL='https://ittixiicaeizihyzawju.supabase.co';
+const SUPABASE_KEY='sb_publishable_SIlfF6-ctdJL2WTg3eTlKQ_5F3LKsSl';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const empty=t=>`<div class="empty">${esc(t)}</div>`;
+async function load(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){location.href='/login?next=/ai';return;}
+  const r=await fetch(`${SUPABASE_URL}/functions/v1/ai-revenue-data`,{headers:{Authorization:`Bearer ${session.access_token}`}});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error||'load_failed');
+  document.getElementById('tenantBadge').textContent=d.tenant?.name||'Vaultify';
+  const status=d.agent?.status||'draft';
+  document.getElementById('agentStatus').innerHTML=status==='active'?'<span class="green">ACTIVE</span>':'DRAFT';
+  document.getElementById('agentGoal').textContent=`الهدف: ${d.agent?.conversion_goal||'meeting'}`;
+  document.getElementById('leadCount').textContent=d.counts?.leads||0;
+  document.getElementById('qualifiedCount').textContent=d.counts?.qualified||0;
+  document.getElementById('hotCount').textContent=d.counts?.hot||0;
+  const hot=document.getElementById('hotLeads');
+  hot.innerHTML=(d.hot_leads||[]).length?(d.hot_leads||[]).map(x=>`<div class="row"><div class="main"><b>${esc(x.contacts?.name||x.contacts?.phone||'Lead')}</b><span>${esc(x.stage)} • ${esc(x.estimated_value||0)} ${esc(x.currency||'SAR')}</span></div><div class="score">${esc(x.score||0)}</div></div>`).join(''):empty('ما عندنا Hot Leads حتى الآن.');
+  const offers=document.getElementById('offers');
+  offers.innerHTML=(d.offers||[]).map(o=>`<div class="offer"><header><b>${esc(o.name)}</b><span class="price">${Number(o.monthly_fee||0).toLocaleString('ar-SA')} ر.س/شهر</span></header><div class="muted" style="margin-top:5px">تأسيس ${Number(o.setup_fee||0).toLocaleString('ar-SA')} ر.س</div><div class="chips">${Object.keys(o.features||{}).filter(k=>o.features[k]).slice(0,4).map(k=>`<span class="chip">${esc(k.replaceAll('_',' '))}</span>`).join('')}</div></div>`).join('')||empty('لا توجد باقات.');
+  const seq=document.getElementById('sequences');
+  seq.innerHTML=(d.sequences||[]).length?(d.sequences||[]).map(s=>`<div class="row"><div class="main"><b>${esc(s.name)}</b><span>${esc(s.status)}${s.stop_on_reply?' • Stop on reply':''}</span></div><span class="chip">Sequence</span></div>`).join(''):empty('لا توجد Sequences.');
+  const tasks=document.getElementById('tasks');
+  tasks.innerHTML=(d.tasks||[]).length?(d.tasks||[]).map(t=>`<div class="row"><div class="main"><b>${esc(t.title)}</b><span>${esc(t.priority)} • ${t.due_at?new Date(t.due_at).toLocaleString('ar-SA'):'بدون موعد'}</span></div></div>`).join(''):empty('لا توجد مهام مستحقة.');
+  document.getElementById('loading').remove(); document.getElementById('app').hidden=false;
+}
+load().catch(e=>{document.getElementById('loading').innerHTML=`<div class="error">تعذر تحميل Vaultify AI: ${esc(e.message)}</div>`;});
+</script>
+</body>
+</html>
