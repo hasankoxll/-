@@ -11,6 +11,19 @@ async function authHeaders() {
   };
 }
 
+export type NextBestAction = {
+  lead_id: string;
+  action: 'follow_up_now' | 'recover_stagnant_deal' | 'confirm_meeting_or_close' | 'advance_to_offer' | string;
+  priority: string;
+  reason: string;
+  estimated_value: number;
+  currency: string;
+  score: number;
+  stage: string;
+  stagnation_hours: number;
+  contact?: { name?: string; phone?: string; email?: string } | null;
+};
+
 export type MobileBootstrap = {
   generated_at: string;
   tenant?: { name?: string; status?: string; timezone?: string; locale?: string };
@@ -27,18 +40,7 @@ export type MobileBootstrap = {
     open_dlq: number;
     critical_incidents: number;
   };
-  next_best_actions: Array<{
-    lead_id: string;
-    action: string;
-    priority: string;
-    reason: string;
-    estimated_value: number;
-    currency: string;
-    score: number;
-    stage: string;
-    stagnation_hours: number;
-    contact?: { name?: string; phone?: string; email?: string } | null;
-  }>;
+  next_best_actions: NextBestAction[];
   hot_leads: Array<{
     id: string;
     stage?: string;
@@ -80,6 +82,29 @@ export async function getMobileBootstrap(): Promise<MobileBootstrap> {
   return body;
 }
 
+export async function executeNextBestAction(action: NextBestAction, idempotencyKey: string) {
+  const response = await fetch(`${baseUrl}/functions/v1/ai-revenue-action`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify({
+      lead_id: action.lead_id,
+      action: action.action,
+      idempotency_key: idempotencyKey,
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body?.error || `HTTP_${response.status}`);
+  return body as {
+    ok: boolean;
+    duplicate?: boolean;
+    action?: string;
+    task?: { id?: string; title?: string; status?: string; priority?: string; due_at?: string };
+    policy_guard?: string;
+    external_side_effect?: boolean;
+  };
+}
+
+// Backward-compatible internal test activation used by the existing web/MVP flow.
 export async function activateLead(leadId: string) {
   const response = await fetch(`${baseUrl}/functions/v1/ai-revenue-action`, {
     method: 'POST',
