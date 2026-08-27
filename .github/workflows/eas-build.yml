@@ -1,0 +1,162 @@
+name: EAS Mobile Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Build profile
+        required: true
+        default: development
+        type: choice
+        options:
+          - development
+          - preview
+      platform:
+        description: Target platform
+        required: true
+        default: all
+        type: choice
+        options:
+          - ios
+          - android
+          - all
+  push:
+    tags:
+      - 'mobile-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eas-build-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'production' }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  EXPO_NO_TELEMETRY: '1'
+
+jobs:
+  preflight:
+    name: Preflight validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Expo Doctor
+        run: npx expo-doctor@latest
+
+      - name: Run tests when present
+        run: npm run test --if-present
+
+      - name: Require EAS project link
+        run: |
+          node - <<'NODE'
+          const app = require('./app.json');
+          const id = app?.expo?.extra?.eas?.projectId;
+          if (!id) {
+            console.error('EAS project is not linked. Run eas init once and commit expo.extra.eas.projectId before building.');
+            process.exit(1);
+          }
+          console.log('EAS project link detected:', id);
+          NODE
+
+      - name: Require lockfile for production
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
+        run: |
+          test -f package-lock.json || {
+            echo 'Production blocked: mobile/package-lock.json is required for deterministic builds.';
+            exit 1;
+          }
+
+  build-nonprod:
+    name: EAS ${{ inputs.profile }} / ${{ matrix.platform }}
+    if: github.event_name == 'workflow_dispatch'
+    needs: preflight
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ inputs.platform == 'all' && fromJSON('["ios","android"]') || fromJSON(format('["{0}"]', inputs.platform)) }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo identity
+        run: eas whoami
+
+      - name: Start EAS build
+        run: eas build --platform ${{ matrix.platform }} --profile ${{ inputs.profile }} --non-interactive --no-wait
+
+  build-production:
+    name: Production / ${{ matrix.platform }}
+    if: startsWith(github.ref, 'refs/tags/mobile-v')
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: mobile-production
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ios, android]
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Deterministic install
+        run: npm ci --no-audit --no-fund
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo identity
+        run: eas whoami
+
+      - name: Start production build
+        run: eas build --platform ${{ matrix.platform }} --profile production --non-interactive --no-wait
