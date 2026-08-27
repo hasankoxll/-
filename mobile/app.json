@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Vaultify",
-    "slug": "vaultify",
+    "slug": "vaultify-mobile",
     "scheme": "vaultify",
     "version": "0.1.0",
     "orientation": "portrait",
