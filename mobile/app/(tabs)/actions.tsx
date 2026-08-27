@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { executeNextBestAction, getMobileBootstrap, NextBestAction } from '@/lib/api';
 
@@ -9,6 +9,13 @@ function labelFor(action: string) {
     case 'advance_to_offer': return 'إنشاء مهمة العرض التالي';
     default: return 'إنشاء مهمة متابعة الآن';
   }
+}
+
+function createIdempotencyKey(item: NextBestAction) {
+  const randomId = typeof crypto?.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${new Date().getTime()}-${Math.floor(Math.random() * 1_000_000)}`;
+  return `${item.lead_id}:${item.action}:${randomId}`;
 }
 
 export default function ActionsScreen(){
@@ -22,10 +29,12 @@ export default function ActionsScreen(){
     setLoading(true);setError(null);
     try{const d=await getMobileBootstrap();setItems(d.next_best_actions||[]);}catch(e){setError(e instanceof Error?e.message:'LOAD_FAILED');}finally{setLoading(false);}
   },[]);
-  useEffect(()=>{load();},[load]);
+
+  const [initialLoad] = useState(() => { void load(); return true; });
+  void initialLoad;
 
   async function approve(item:NextBestAction){
-    const key=`${item.lead_id}:${item.action}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const key=createIdempotencyKey(item);
     setPending((x)=>({...x,[item.lead_id]:key}));
     setError(null);
     try{
