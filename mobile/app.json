@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Vaultify",
+    "slug": "vaultify",
+    "scheme": "vaultify",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router", "expo-secure-store"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "io.getvaultify.app"
+    },
+    "android": {
+      "package": "io.getvaultify.app"
+    },
+    "extra": {
+      "router": { "origin": false }
+    }
+  }
+}
