@@ -15,7 +15,10 @@
       "package": "io.getvaultify.app"
     },
     "extra": {
-      "router": { "origin": false }
+      "router": { "origin": false },
+      "eas": {
+        "projectId": "4cc33c6c-8bee-4de4-8a23-f31b351b8a06"
+      }
     }
   }
 }
