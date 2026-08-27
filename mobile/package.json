@@ -36,6 +36,6 @@
     "@types/react": "latest",
     "eslint": "latest",
     "eslint-config-expo": "latest",
-    "typescript": "latest"
+    "typescript": "^6.0.0"
   }
 }
