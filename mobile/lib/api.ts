@@ -11,23 +11,68 @@ async function authHeaders() {
   };
 }
 
-export type RevenueOverview = {
-  tenant?: { name?: string };
-  counts?: { leads?: number; qualified?: number; hot?: number };
-  agent?: { status?: string; conversion_goal?: string };
-  hot_leads?: Array<{
+export type MobileBootstrap = {
+  generated_at: string;
+  tenant?: { name?: string; status?: string; timezone?: string; locale?: string };
+  membership?: { role?: string };
+  executive: {
+    realized_revenue_30d: number;
+    attributed_revenue: number;
+    pipeline_value: number;
+    weighted_pipeline: number;
+    revenue_at_risk: number;
+    hot_opportunity_value: number;
+    active_leads: number;
+    hot_leads: number;
+    open_dlq: number;
+    critical_incidents: number;
+  };
+  next_best_actions: Array<{
+    lead_id: string;
+    action: string;
+    priority: string;
+    reason: string;
+    estimated_value: number;
+    currency: string;
+    score: number;
+    stage: string;
+    stagnation_hours: number;
+    contact?: { name?: string; phone?: string; email?: string } | null;
+  }>;
+  hot_leads: Array<{
     id: string;
     stage?: string;
     score?: number;
     estimated_value?: number;
     currency?: string;
-    contacts?: { name?: string; phone?: string };
+    contacts?: { name?: string; phone?: string; email?: string } | null;
   }>;
-  tasks?: Array<{ id?: string; title?: string; priority?: string; due_at?: string }>;
+  tasks: Array<{ id?: string; title?: string; priority?: string; due_at?: string }>;
+  ops: {
+    integrations: Array<{
+      integration_type?: string;
+      integration_key?: string;
+      status?: string;
+      severity?: string;
+      latency_ms?: number;
+      revenue_risk?: boolean;
+      estimated_revenue_impact?: number;
+      error_code?: string | null;
+    }>;
+    incidents: Array<{
+      id?: string;
+      component?: string;
+      severity?: string;
+      revenue_risk?: boolean;
+      estimated_revenue_impact?: number;
+      recovery_action?: string | null;
+    }>;
+    dlq_count: number;
+  };
 };
 
-export async function getRevenueOverview(): Promise<RevenueOverview> {
-  const response = await fetch(`${baseUrl}/functions/v1/ai-revenue-data`, {
+export async function getMobileBootstrap(): Promise<MobileBootstrap> {
+  const response = await fetch(`${baseUrl}/functions/v1/mobile-bootstrap`, {
     headers: await authHeaders(),
   });
   const body = await response.json().catch(() => ({}));
