@@ -8,6 +8,8 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "validate": "npm run typecheck && npm run lint && npx expo-doctor@latest",
     "eas:dev:ios": "eas build --platform ios --profile development",
     "eas:dev:android": "eas build --platform android --profile development",
     "eas:preview:ios": "eas build --platform ios --profile preview",
@@ -31,6 +33,8 @@
   },
   "devDependencies": {
     "@types/react": "latest",
+    "eslint": "latest",
+    "eslint-config-expo": "latest",
     "typescript": "latest"
   }
 }
