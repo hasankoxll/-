@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getMobileBootstrap, MobileBootstrap } from '@/lib/api';
 
@@ -28,7 +28,8 @@ export default function RevenueScreen() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const [initialLoad] = useState(() => { void load(); return true; });
+  void initialLoad;
 
   const topAction = useMemo(() => data?.next_best_actions?.[0] || null, [data]);
   const degraded = useMemo(() => (data?.ops?.integrations || []).filter(x => x.status !== 'healthy'), [data]);
