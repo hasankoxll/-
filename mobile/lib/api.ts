@@ -41,17 +41,17 @@ export type MobileBootstrap = {
     critical_incidents: number;
   };
   next_best_actions: NextBestAction[];
-  hot_leads: Array<{
+  hot_leads: {
     id: string;
     stage?: string;
     score?: number;
     estimated_value?: number;
     currency?: string;
     contacts?: { name?: string; phone?: string; email?: string } | null;
-  }>;
-  tasks: Array<{ id?: string; title?: string; priority?: string; due_at?: string }>;
+  }[];
+  tasks: { id?: string; title?: string; priority?: string; due_at?: string }[];
   ops: {
-    integrations: Array<{
+    integrations: {
       integration_type?: string;
       integration_key?: string;
       status?: string;
@@ -60,15 +60,15 @@ export type MobileBootstrap = {
       revenue_risk?: boolean;
       estimated_revenue_impact?: number;
       error_code?: string | null;
-    }>;
-    incidents: Array<{
+    }[];
+    incidents: {
       id?: string;
       component?: string;
       severity?: string;
       revenue_risk?: boolean;
       estimated_revenue_impact?: number;
       recovery_action?: string | null;
-    }>;
+    }[];
     dlq_count: number;
   };
 };
