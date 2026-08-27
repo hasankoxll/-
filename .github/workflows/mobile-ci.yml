@@ -1,0 +1,77 @@
+name: Mobile CI
+
+on:
+  push:
+    branches:
+      - mobile/vaultify-expo
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+      - '.github/workflows/eas-build.yml'
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+      - '.github/workflows/eas-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  EXPO_NO_TELEMETRY: '1'
+
+jobs:
+  validate:
+    name: Validate mobile app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Expo Doctor
+        run: npx expo-doctor@latest
+
+      - name: Validate Expo public config
+        run: npx expo config --type public > /tmp/vaultify-expo-config.json
+
+      - name: Run tests when present
+        run: npm run test --if-present
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
