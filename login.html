@@ -15,7 +15,7 @@ async function sendMagicLink(){
  btn.disabled=true;st.textContent='جارٍ إرسال رابط الدخول...';st.className='status';
  try{
    const redirectTo=PROD_ORIGIN+next;
-   const r=await fetch(URL+'/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY},body:JSON.stringify({email,create_user:true,options:{email_redirect_to:redirectTo}})});
+   const r=await fetch(URL+'/auth/v1/otp',{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY},body:JSON.stringify({email,create_user:true,redirect_to:redirectTo})});
    const body=await r.text();
    if(!r.ok){let msg=body;try{const j=JSON.parse(body);msg=j.msg||j.message||j.error_description||j.error||body}catch{}throw new Error(msg||('HTTP '+r.status));}
    st.textContent=next.startsWith('/ai')?'تم إرسال الرابط. افتح بريدك واضغطه وستعود مباشرة إلى Vaultify AI.':'تم إرسال رابط الدخول. افتح بريدك واضغط الرابط ثم ستنتقل للوحة Vaultify.';st.className='status ok';
